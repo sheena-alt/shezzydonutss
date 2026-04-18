@@ -1,0 +1,506 @@
+
+<!DOCTYPE html>
+    <html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shezzy Donuts</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+<body>
+
+
+<div class="login-page" id="loginPage">
+    <div class="login-box">
+        <h2>Shezzy Donuts Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Log In</button>
+        <button onclick="register()">Create Account</button>
+        <p id="error" class="error"></p>
+    </div>
+</div>
+
+<div class="app" id="appPage" style="display:none;">
+
+<header>
+    <h1>Shezzy Donuts</h1>
+    <button class="dark-toggle" onclick="toggleDark()">🌙</button>
+</header>
+
+<section id="homeSection">
+    <div class="products" id="productContainer"></div>
+</section>
+
+<section id="cartSection" class="hidden">
+    <h2>Your Cart</h2>
+    <ul id="cartList"></ul>
+</section>
+
+<section id="favSection" class="hidden">
+    <h2>Your Favorites</h2>
+    <ul id="favList"></ul>
+</section>
+
+<section id="checkoutSection" class="hidden">
+    <h2>Checkout</h2>
+    <p>Total: ₱<span id="totalPrice">0</span></p>
+    <button onclick="checkout()">Confirm Order</button>
+</section>
+
+ <section id="profileSection"
+       class="hidden">
+
+    <h2 style="margin-bottom:15px;">View Profile</h2>
+
+    
+    <div class="profile-top">
+        <div class="profile-left">
+            <img id="preview" src="https://via.placeholder.com/120" class="profile-img">
+            <input type="file" id="profilePic" accept="image/*">
+        </div>
+
+        <div class="profile-right">
+            <input type="text" id="displayName" placeholder="Add yourName">
+            <button onclick="saveProfile()">Save Profile </button>
+        </div>
+    </div>
+
+    
+    <div class="profile-menu">
+        <div onclick="showSection('cart')">🛒<br><span>Carts</span></div>
+        <div onclick="showSection('fav')">❤️<br><span>Favorites</span></div>
+        <div onclick="showAddress()">📍<br><span>Address</span></div>
+        <div onclick="showReview()">☆<br><span>Review</span></div>
+        </div>
+      
+   
+    <div class="profile-options">
+       
+        <p onclick="showSection('settings')">⚙ Setting</p>
+        <p>📄 Terms & Policies</p>
+    </div>
+
+    <div id="addressBox" class="hidden">
+           <textarea id="addressInput" placeholder="Enter your address"></textarea>
+           <button onclick="saveAddress()">Save Address</button>
+    </div>
+ 
+
+</section>
+
+<section id="settingsSection" class="hidden">
+    <h2>Settings</h2>
+
+    <div class="settings-box">
+        <h3>Appearance</h3>
+        <button onclick="toggleDark()">Toggle Dark Mode 🌙</button>
+    </div>
+
+    <div class="settings-box">
+        <h3>Account Info</h3>
+        <p><strong>Username:</strong> <span id="accountUsername"></span></p>
+    </div>
+
+    <div class="settings-box danger">
+        <h3>Danger Zone</h3>
+        <button onclick="clearAllData()">Clear All App Data</button>
+    </div>
+
+
+</section>
+<nav class="bottom-nav">
+    <a onclick="showSection('home')">Home</a>
+    <a onclick="showSection('cart')">Cart (<span id="cartCount">0</span>)</a>
+    <a onclick="showSection('fav')">Fav (<span id="favCount">0</span>)</a>
+    <a onclick="showSection('checkout')">Checkout</a>
+    <a onclick="showSection('profile')">Profile</a>
+    <a onclick="logout()">Logout</a>
+</nav>
+<div id="reviewModal" class="modal">
+  <div class="modal-content">
+
+    <span class="close" onclick="closeReview()">&times;</span>
+
+    <h3 id="reviewUsername"></h3>
+
+    <div class="stars" id="stars">
+      <span data-value="1">★</span>
+      <span data-value="2">★</span>
+      <span data-value="3">★</span>
+      <span data-value="4">★</span>
+      <span data-value="5">★</span>
+    </div>
+
+    <textarea id="reviewComment" placeholder="Write your review..."></textarea>
+    <button onclick="submitReview()">Submit</button>
+
+    <hr>
+    <h4>Customer Reviews</h4>
+    <div id="allReviews"></div>
+
+  </div>
+</div>
+
+<script>
+let products = [
+    {id:1, name:"MILKY DONUTS", price:100,img:"image/MILKYDONUTS.jpg"},
+    {id:2, name:"choco", price:100,img:"./image/choco.jpg"},
+    {id:3, name:"ube", price:100, img:"./image/ube.jpg"},
+    {id:4, name:"chocomallows", price:100,img:"./image/chocomallows.jpg"},
+    {id:5, name:"sprinkle", price:100,img:"./image/sprinkle.jpg"}
+];
+
+  
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let fav = JSON.parse(localStorage.getItem("fav")) || [];
+
+
+function register(){
+    let user = username.value;
+    let pass = password.value;
+
+    if(user === "" || pass === ""){
+        error.innerText = "Please fill all fields.";
+        return;
+    }
+
+    let account = { username:user, password:pass };
+    localStorage.setItem("account", JSON.stringify(account));
+    error.innerText = "Account created! You can now login.";
+}
+
+function login(){
+    let savedAccount = JSON.parse(localStorage.getItem("account"));
+
+    if(!savedAccount){
+        error.innerText="No account found. Create one first.";
+        return;
+    }
+
+    if(username.value === savedAccount.username && password.value === savedAccount.password){
+        localStorage.setItem("loggedIn","true");
+        loginPage.style.display="none";
+        appPage.style.display="block";
+        loadProducts();
+        updateUI();
+    } else {
+        error.innerText="Invalid Username or Password";
+    }
+}
+
+function logout(){
+    localStorage.removeItem("loggedIn");
+    appPage.style.display="none";
+    loginPage.style.display="flex";
+}
+
+window.onload = function(){
+    if(localStorage.getItem("loggedIn")==="true"){
+        loginPage.style.display="none";
+        appPage.style.display="block";
+        loadProducts();
+        updateUI();
+    }
+
+    if(localStorage.getItem("profilePic")){
+        preview.src = localStorage.getItem("profilePic");
+    }
+}
+
+function toggleDark(){
+    document.body.classList.toggle("dark");
+}
+function loadAccountInfo(){
+    let account = JSON.parse(localStorage.getItem("account"));
+    if(account){
+        document.getElementById("accountUsername").innerText = account.username;
+    }
+} 
+
+function clearAllData(){
+    let confirmDelete = confirm("Are you sure? This will delete everything!");
+    
+    if(confirmDelete){
+        localStorage.clear();
+        alert("All data cleared!");
+        location.reload();
+    }
+}
+
+function loadProducts(){
+    productContainer.innerHTML="";
+    products.forEach(p=>{
+        productContainer.innerHTML+=`
+        <div class="card">
+            <img src="${p.img}">
+            <h3>${p.name}</h3>
+            <p>₱${p.price}</p>
+            <button onclick="addToCart(${p.id})">Add</button>
+            <button onclick="addToFav(${p.id})">❤</button>
+        </div>`;
+    });
+}
+
+
+function addToCart(id){
+    let item = products.find(p=>p.id===id);
+    let existing = cart.find(p=>p.id===id);
+
+    if(existing){ existing.qty+=1; }
+    else{ cart.push({...item, qty:1}); }
+
+    save();
+    updateUI();
+}
+
+function removeCart(index){
+    cart.splice(index,1);
+    save();
+    updateUI();
+}
+
+
+function addToFav(id){
+    if(!fav.find(p=>p.id===id)){
+        fav.push(products.find(p=>p.id===id));
+    }
+    save();
+    updateUI();
+}
+
+function removeFav(index){
+    fav.splice(index,1);
+    save();
+    updateUI();
+}
+
+
+function updateUI(){
+    cartList.innerHTML="";
+    favList.innerHTML="";
+    let total=0;
+
+    cart.forEach((item,i)=>{
+        total += item.price*item.qty;
+        cartList.innerHTML+=`
+        <li>
+            ${item.name} (x${item.qty}) - ₱${item.price*item.qty}
+            <button onclick="removeCart(${i})">X</button>
+        </li>`;
+    });
+
+    fav.forEach((item,i)=>{
+        favList.innerHTML+=`
+        <li>
+            ${item.name}
+            <button onclick="removeFav(${i})">X</button>
+        </li>`;
+    });
+
+    totalPrice.innerText=total;
+    cartCount.innerText=cart.length;
+    favCount.innerText=fav.length;
+}
+
+function checkout(){
+    if(cart.length===0){
+        alert("Cart is empty!");
+        return;
+    }
+    alert("Order Confirmed! 🎉");
+    cart=[];
+    save();
+    updateUI();
+}
+
+profilePic.addEventListener("change", function(){
+
+    let reader = new FileReader();
+    reader.onload = function(){
+        preview.src = reader.result;
+        localStorage.setItem("profilePic", reader.result);
+    }
+    reader.readAsDataURL(this.files[0]);
+});
+
+
+function save(){
+    localStorage.setItem("cart",JSON.stringify(cart));
+    localStorage.setItem("fav",JSON.stringify(fav));
+}
+
+function showSection(section){
+    document.querySelectorAll("section").forEach(sec=>sec.classList.add("hidden"));
+
+    if(section==="home") homeSection.classList.remove("hidden");
+    if(section==="cart") cartSection.classList.remove("hidden");
+    if(section==="fav") favSection.classList.remove("hidden");
+    if(section==="checkout") checkoutSection.classList.remove("hidden");
+    if(section==="profile") profileSection.classList.remove("hidden");
+    if(section==="settings"){
+        settingsSection.classList.remove("hidden");
+        loadAccountInfo();
+    }
+}
+
+
+ function saveProfile(){
+    let name = document.getElementById("displayName").value.trim();
+
+    if (name === ""){
+           alert("Name cannot be empty!");
+           return;
+    }
+    localStorage.setItem("displayName", name);
+    alert("Profile Saved!");
+}
+
+function showAddress(){
+    document.getElementById("addressBox").classList.toggle("hidden");
+}
+
+
+function saveAddress(){
+    let address = document.getElementById("addressInput").value.trim();
+
+    if(address === ""){
+         alert("Address cannot be empty!");
+           return;
+    }
+    localStorage.setItem("address", address);
+    alert("Address Saved!");
+}
+
+
+window.addEventListener("load", function(){
+
+    if(localStorage.getItem("displayName")){
+        document.getElementById("displayName").value = localStorage.getItem("displayName");
+    }
+
+    if(localStorage.getItem("address")){
+        document.getElementById("addressInput").value = localStorage.getItem("address");
+    }
+
+});
+
+let selectedRating = 0;
+
+
+function showReview(){
+    reviewModal.style.display = "block";
+
+    let account = JSON.parse(localStorage.getItem("account"));
+    let displayName = localStorage.getItem("displayName");
+
+    reviewUsername.innerText = displayName || (account ? account.username : "Guest");
+
+    loadAllReviews();
+}
+
+
+function closeReview(){
+    reviewModal.style.display = "none";
+}
+
+document.addEventListener("click", function(e){
+    if(e.target.parentElement?.id === "stars"){
+        selectedRating = e.target.getAttribute("data-value");
+
+        document.querySelectorAll("#stars span").forEach(s=>s.classList.remove("active"));
+
+        for(let i=0;i<selectedRating;i++){
+            document.querySelectorAll("#stars span")[i].classList.add("active");
+        }
+    }
+});
+
+
+function submitReview(){
+    let comment = reviewComment.value.trim();
+
+    if(selectedRating == 0) return alert("Select rating!");
+    if(comment === "") return alert("Write comment!");
+
+    let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
+
+    reviews.push({
+        user: reviewUsername.innerText,
+        rating: selectedRating,
+        comment: comment
+    });
+
+    localStorage.setItem("reviews", JSON.stringify(reviews));
+
+    alert("Review submitted!");
+
+    selectedRating = 0;
+    reviewComment.value = "";
+    document.querySelectorAll("#stars span").forEach(s=>s.classList.remove("active"));
+
+    loadAllReviews();
+}
+
+
+function loadAllReviews(){
+    let reviews = JSON.parse(localStorage.getItem("reviews")) || [];
+    allReviews.innerHTML = "";
+
+    if(reviews.length === 0){
+        allReviews.innerHTML = "<p>No reviews yet.</p>";
+        return;
+    }
+
+    reviews.slice().reverse().forEach(r=>{
+        let stars = "★".repeat(r.rating) + "☆".repeat(5-r.rating);
+
+        allReviews.innerHTML += `
+        <div class="review-box">
+            <b>${r.user}</b><br>
+            <span style="color:gold">${stars}</span><br>
+            <small>${r.comment}</small>
+        </div>`;
+    });
+}
+
+
+</script>
+    <script type="module">
+import { saveOrder } from "./firebase.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBdJjHpUgvdOtTIAkBMlcpOZ3x53hvV6SM",
+  authDomain: "shezzydonuts-e8ab5.firebaseapp.com",
+  projectId: "shezzydonuts-e8ab5",
+  storageBucket: "shezzydonuts-e8ab5.firebasestorage.app",
+  messagingSenderId: "723007165099",
+  appId: "1:723007165099:web:71e8b2e6b9642804d21dee",
+  measurementId: "G-40WKH23TBT"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+const form = document.getElementById("orderForm");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const order = {
+      name: document.getElementById("name").value,
+      product: document.getElementById("product").value,
+      quantity: document.getElementById("quantity").value
+    };
+
+    await saveOrder(order);
+    form.reset();
+  });
+</script>
+</body>
+</html>
